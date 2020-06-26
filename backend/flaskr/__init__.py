@@ -54,7 +54,7 @@ def create_app(test_config=None):
                 }
             )
         except:
-            return jsonify({"success": False, "message": "bad request"}), 400
+            abort(400)
 
     # http://127.0.0.1:5000/
 
@@ -74,16 +74,20 @@ def create_app(test_config=None):
     @app.route("/categories/<int:category_id>/questions")
     def questions(category_id):
         try:
-            page = request.args.get("page", 1, type=int)
-            all_questions = Question.query.filter_by(category=str(category_id)).all()
-            all_categories = [category.format() for category in Category.query.all()]
-
             current_category = Category.query.filter_by(id=category_id).one_or_none()
+
+            if current_category is None:
+                abort(404)
+
+            page = request.args.get("page", 1, type=int)
             current_questions = (
                 Question.query.filter_by(category=str(category_id))
                 .paginate(page, 10, True)
                 .items
             )
+            all_questions = Question.query.filter_by(category=str(category_id)).all()
+            all_categories = [category.format() for category in Category.query.all()]
+
             formatted_questions = [question.format() for question in current_questions]
 
             return jsonify(
@@ -96,7 +100,7 @@ def create_app(test_config=None):
                 }
             )
         except:
-            return jsonify({"success": False, "message": "not found"}), 404
+            abort(422)
 
     """
     @TODO: 
@@ -154,5 +158,23 @@ def create_app(test_config=None):
     Create error handlers for all expected errors 
     including 404 and 422. 
     """
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return (
+            jsonify({"success": False, "error": 400, "message": "bad request"}),
+            400,
+        )
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return (jsonify({"success": False, "error": 404, "message": "not found"}), 404)
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return (
+            jsonify({"success": False, "error": 422, "message": "unprocessable"}),
+            422,
+        )
 
     return app
