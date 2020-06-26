@@ -18,7 +18,7 @@ def create_app(test_config=None):
     """
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
-    cors = CORS(app, resources={r"/*", {"origins": "*"}})
+    cors = CORS(app, resources={r"*": {"origins": "*"}})
 
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
@@ -42,16 +42,21 @@ def create_app(test_config=None):
 
     @app.route("/categories")
     def categories():
-        categories = Category.query.all()
-        categories = [category.format() for category in categories]
+        try:
+            categories = Category.query.order_by(Category.id).all()
+            categories = [category.format() for category in categories]
 
-        return jsonify(
-            {
-                "success": True,
-                "categories": categories,
-                "total_categories": len(categories),
-            }
-        )
+            return jsonify(
+                {
+                    "success": True,
+                    "categories": categories,
+                    "total_categories": len(categories),
+                }
+            )
+        except:
+            return jsonify({"success": False, "message": "bad request"}), 400
+
+    # http://127.0.0.1:5000/
 
     """
     @TODO: 

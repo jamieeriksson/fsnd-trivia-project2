@@ -14,7 +14,7 @@ class TriviaTestCase(unittest.TestCase):
         """Define test variables and initialize app."""
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_path = os.getenv('DATABASE_TEST_URI')
+        self.database_path = os.getenv("DATABASE_TEST_URI")
         # self.database_name = "trivia_test"
         # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
@@ -25,7 +25,7 @@ class TriviaTestCase(unittest.TestCase):
             self.db.init_app(self.app)
             # create all tables
             self.db.create_all()
-    
+
     def tearDown(self):
         """Executed after reach test"""
         pass
@@ -34,6 +34,25 @@ class TriviaTestCase(unittest.TestCase):
     TODO
     Write at least one test for each test for successful operation and for expected errors.
     """
+
+    def test_all_categories(self):
+        """Test GET route for retrieving all of the trivia categories"""
+        response = self.client().get("/categories")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["categories"])
+        self.assertTrue(len(data["categories"]))
+
+    # def test_400_for_incorrect_method(self):
+    #     """Test GET route for retrieving all of the trivia categories"""
+    #     response = self.client().post("/categories")
+    #     data = json.loads(response.data)
+
+    #     self.assertEqual(response.status_code, 405)
+    #     self.assertEqual(data["success"], False)
+    #     self.assertEqual(data["message"], "method not allowed")
 
 
 # Make the tests conveniently executable
