@@ -103,15 +103,34 @@ def create_app(test_config=None):
     This removal will persist in the database and when you refresh the page. 
     """
 
-    @app.route("/questions/<int:question_id>", methods=["DELETE"])
-    def delete_question(question_id):
+    @app.route(
+        "/categories/<int:category_id>/questions/<int:question_id>", methods=["DELETE"]
+    )
+    def delete_question(category_id, question_id):
         try:
             question = Question.query.filter_by(id=question_id).one_or_none()
-            if question is None:
+            category = Category.query.filter_by(id=category_id).one_or_none()
+            if question is None or category is None:
                 abort(404)
-            else:
-                question.delete()
-            return jsonify({"success": True, "questionId": question_id})
+
+            question.delete()
+            all_questions = Question.query.order_by(Question.id).all()
+            page = request.args.get("page", 1, type=int)
+            current_questions = (
+                Question.query.filter_by(category=str(category_id))
+                .paginate(page, 10, True)
+                .items
+            )
+
+            return jsonify(
+                {
+                    "success": True,
+                    "deleted": question_id,
+                    "questions": [question.format() for question in current_questions],
+                    "total_questions": len(all_questions),
+                    "current_category": category.format(),
+                }
+            )
         except:
             abort(422)
 
