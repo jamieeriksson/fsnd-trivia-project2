@@ -19,6 +19,13 @@ class TriviaTestCase(unittest.TestCase):
         # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
+        self.new_question = {
+            "question": "What is my name?",
+            "answer": "Jamie",
+            "Difficulty": "5",
+            "category": "History",
+        }
+
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -83,6 +90,21 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_422_if_no_question_to_delete(self):
         response = self.client().delete("/questions/1000")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
+
+    def test_create_new_question(self):
+        response = self.client().post("/questions", json=self.new_question)
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+
+    def test_422_if_create_question_fails(self):
+        response = self.client().post("/questions")
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 422)
