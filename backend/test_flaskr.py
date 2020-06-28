@@ -69,6 +69,31 @@ class TriviaTestCase(unittest.TestCase):
         response = self.client().get("/categories/1000/questions")
         data = json.loads(response.data)
 
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "resource not found")
+
+    def test_delete_question_by_id(self):
+        response = self.client().delete("/categories/3/questions/14")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["questionId"])
+        self.assertTrue(data["categoryId"])
+
+    def test_422_if_no_question_to_delete(self):
+        response = self.client().delete("/categories/3/questions/1000")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
+
+    def test_422_if_no_category_to_delete_from(self):
+        response = self.client().delete("/categories/1000/questions/12")
+        data = json.loads(response.data)
+
         self.assertEqual(response.status_code, 422)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "unprocessable")

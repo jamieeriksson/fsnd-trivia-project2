@@ -73,34 +73,27 @@ def create_app(test_config=None):
 
     @app.route("/categories/<int:category_id>/questions")
     def questions(category_id):
-        try:
-            current_category = Category.query.filter_by(id=category_id).one_or_none()
-
-            if current_category is None:
-                abort(404)
-
-            page = request.args.get("page", 1, type=int)
-            current_questions = (
-                Question.query.filter_by(category=str(category_id))
-                .paginate(page, 10, True)
-                .items
-            )
-            all_questions = Question.query.filter_by(category=str(category_id)).all()
-            all_categories = [category.format() for category in Category.query.all()]
-
-            formatted_questions = [question.format() for question in current_questions]
-
-            return jsonify(
-                {
-                    "success": True,
-                    "questions": formatted_questions,
-                    "totalQuestions": len(all_questions),
-                    "categories": all_categories,
-                    "currentCategory": current_category.format(),
-                }
-            )
-        except:
-            abort(422)
+        current_category = Category.query.filter_by(id=category_id).one_or_none()
+        if current_category is None:
+            abort(404)
+        page = request.args.get("page", 1, type=int)
+        current_questions = (
+            Question.query.filter_by(category=str(category_id))
+            .paginate(page, 10, True)
+            .items
+        )
+        all_questions = Question.query.filter_by(category=str(category_id)).all()
+        all_categories = [category.format() for category in Category.query.all()]
+        formatted_questions = [question.format() for question in current_questions]
+        return jsonify(
+            {
+                "success": True,
+                "questions": formatted_questions,
+                "totalQuestions": len(all_questions),
+                "categories": all_categories,
+                "currentCategory": current_category.format(),
+            }
+        )
 
     """
     @TODO: 
@@ -109,6 +102,23 @@ def create_app(test_config=None):
     TEST: When you click the trash icon next to a question, the question will be removed.
     This removal will persist in the database and when you refresh the page. 
     """
+
+    @app.route(
+        "/categories/<int:category_id>/questions/<int:question_id>", methods=["DELETE"]
+    )
+    def delete_question(category_id, question_id):
+        try:
+            question = Question.query.filter_by(id=question_id).one_or_none()
+            category = Category.query.filter_by(id=category_id).one_or_none()
+            if question is None or category is None:
+                abort(404)
+            else:
+                question.delete()
+            return jsonify(
+                {"success": True, "questionId": question_id, "categoryId": category_id}
+            )
+        except:
+            abort(422)
 
     """
     @TODO: 
@@ -168,7 +178,10 @@ def create_app(test_config=None):
 
     @app.errorhandler(404)
     def not_found(error):
-        return (jsonify({"success": False, "error": 404, "message": "not found"}), 404)
+        return (
+            jsonify({"success": False, "error": 404, "message": "resource not found"}),
+            404,
+        )
 
     @app.errorhandler(422)
     def unprocessable(error):
