@@ -18,7 +18,7 @@ def create_app(test_config=None):
     """
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
-    cors = CORS(app, resources={r"*": {"origins": "*"}})
+    cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
@@ -32,6 +32,7 @@ def create_app(test_config=None):
         response.headers.add(
             "Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS"
         )
+        response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
 
     """
@@ -44,7 +45,7 @@ def create_app(test_config=None):
     def categories():
         try:
             categories = Category.query.order_by(Category.id).all()
-            categories = [category.format() for category in categories]
+            categories = [category.type for category in categories]
 
             return jsonify(
                 {
@@ -55,8 +56,6 @@ def create_app(test_config=None):
             )
         except:
             abort(400)
-
-    # http://127.0.0.1:5000/
 
     """
     @TODO: 
@@ -148,17 +147,20 @@ def create_app(test_config=None):
     @app.route("/questions", methods=["POST"])
     def create_questions():
         body = request.get_json()
+        print(body)
         new_question = body.get("question", None)
         new_answer = body.get("answer", None)
-        new_difficulty = int(body.get("difficulty", None))
-        new_category = body.get("category", None)
+        new_difficulty = body.get("difficulty", None)
+
+        category_id = body.get("category", None)
+        new_category = Category.query.filter_by(id=int(category_id)).first()
 
         try:
             question = Question(
                 question=new_question,
                 answer=new_answer,
-                difficulty=new_difficulty,
-                category=new_category,
+                difficulty=int(new_difficulty),
+                category=str(new_category.id),
             )
             question.insert()
 
@@ -229,7 +231,7 @@ def create_app(test_config=None):
 
     TEST: In the "Play" tab, after a user selects "All" or a category,
     one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not. 
+    and shown whether they were correct or not.
     """
 
     """
