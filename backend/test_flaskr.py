@@ -22,8 +22,8 @@ class TriviaTestCase(unittest.TestCase):
         self.new_question = {
             "question": "What is my name?",
             "answer": "Jamie",
-            "Difficulty": "5",
-            "category": "History",
+            "difficulty": "5",
+            "category": "4",
         }
 
         # binds the app to the current context
@@ -105,9 +105,29 @@ class TriviaTestCase(unittest.TestCase):
         response = self.client().post("/questions", json=self.new_question)
         data = json.loads(response.data)
 
-    def test_422_if_create_question_fails(self):
-        response = self.client().post("/questions", json=self.new_question)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["created"])
+        self.assertTrue(data["total_questions"])
+
+    def test_search_questions(self):
+        response = self.client().post("/questions/search", json={"searchTerm": "count"})
         data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(len(data["questions"]))
+        self.assertTrue(data["totalQuestions"])
+
+    def test_422_if_no_search_page(self):
+        response = self.client().post(
+            "/questions/search?page=1000", json={"searchTerm": ""}
+        )
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "unprocessable")
 
 
 # Make the tests conveniently executable
