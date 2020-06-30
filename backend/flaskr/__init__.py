@@ -70,8 +70,31 @@ def create_app(test_config=None):
     Clicking on the page numbers should update the questions. 
     """
 
+    @app.route("/questions")
+    def questions():
+        all_categories = [
+            category.type for category in Category.query.order_by(Category.id).all()
+        ]
+        current_category = Category.query.first()
+        all_questions = Question.query.all()
+
+        page = request.args.get("page", 1, type=int)
+        current_questions = Question.query.paginate(page, 10, True).items
+        formatted_questions = [question.format() for question in current_questions]
+
+        return jsonify(
+            {
+                "success": True,
+                "questions": formatted_questions,
+                "totalQuestions": len(all_questions),
+                "categories": all_categories,
+                "currentCategory": current_category.type,
+            }
+        )
+
     @app.route("/categories/<int:category_id>/questions")
-    def questions(category_id):
+    def questions_by_category(category_id):
+        category_id += 1
         current_category = Category.query.filter_by(id=category_id).one_or_none()
         if current_category is None:
             abort(404)
@@ -82,14 +105,12 @@ def create_app(test_config=None):
             .items
         )
         all_questions = Question.query.filter_by(category=str(category_id)).all()
-        all_categories = [category.format() for category in Category.query.all()]
         formatted_questions = [question.format() for question in current_questions]
         return jsonify(
             {
                 "success": True,
                 "questions": formatted_questions,
                 "totalQuestions": len(all_questions),
-                "categories": all_categories,
                 "currentCategory": current_category.format(),
             }
         )
@@ -102,34 +123,16 @@ def create_app(test_config=None):
     This removal will persist in the database and when you refresh the page. 
     """
 
-    @app.route(
-        "/categories/<int:category_id>/questions/<int:question_id>", methods=["DELETE"]
-    )
-    def delete_question(category_id, question_id):
+    @app.route("/questions/<int:question_id>", methods=["DELETE"])
+    def delete_question(question_id):
         try:
             question = Question.query.filter_by(id=question_id).one_or_none()
-            category = Category.query.filter_by(id=category_id).one_or_none()
-            if question is None or category is None:
+            if question is None:
                 abort(404)
 
             question.delete()
-            all_questions = Question.query.order_by(Question.id).all()
-            page = request.args.get("page", 1, type=int)
-            current_questions = (
-                Question.query.filter_by(category=str(category_id))
-                .paginate(page, 10, True)
-                .items
-            )
 
-            return jsonify(
-                {
-                    "success": True,
-                    "deleted": question_id,
-                    "questions": [question.format() for question in current_questions],
-                    "total_questions": len(all_questions),
-                    "current_category": category.format(),
-                }
-            )
+            return jsonify({"success": True, "deleted": question_id,})
         except:
             abort(422)
 
