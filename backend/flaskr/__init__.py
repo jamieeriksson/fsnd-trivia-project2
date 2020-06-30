@@ -92,29 +92,6 @@ def create_app(test_config=None):
             }
         )
 
-    @app.route("/categories/<int:category_id>/questions")
-    def questions_by_category(category_id):
-        category_id += 1
-        current_category = Category.query.filter_by(id=category_id).one_or_none()
-        if current_category is None:
-            abort(404)
-        page = request.args.get("page", 1, type=int)
-        current_questions = (
-            Question.query.filter_by(category=str(category_id))
-            .paginate(page, 10, True)
-            .items
-        )
-        all_questions = Question.query.filter_by(category=str(category_id)).all()
-        formatted_questions = [question.format() for question in current_questions]
-        return jsonify(
-            {
-                "success": True,
-                "questions": formatted_questions,
-                "totalQuestions": len(all_questions),
-                "currentCategory": current_category.format(),
-            }
-        )
-
     """
     @TODO: 
     Create an endpoint to DELETE question using a question ID. 
@@ -225,6 +202,29 @@ def create_app(test_config=None):
     category to be shown. 
     """
 
+    @app.route("/categories/<int:category_id>/questions")
+    def questions_by_category(category_id):
+        category_id += 1
+        current_category = Category.query.filter_by(id=category_id).one_or_none()
+        if current_category is None:
+            abort(404)
+        page = request.args.get("page", 1, type=int)
+        current_questions = (
+            Question.query.filter_by(category=str(category_id))
+            .paginate(page, 10, True)
+            .items
+        )
+        all_questions = Question.query.filter_by(category=str(category_id)).all()
+        formatted_questions = [question.format() for question in current_questions]
+        return jsonify(
+            {
+                "success": True,
+                "questions": formatted_questions,
+                "totalQuestions": len(all_questions),
+                "currentCategory": current_category.format(),
+            }
+        )
+
     """
     @TODO: 
     Create a POST endpoint to get questions to play the quiz. 
@@ -236,6 +236,30 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
+
+    @app.route("/quizzes", methods=["POST"])
+    def quiz():
+        body = request.get_json()
+        previous_questions = body.get("previous_questions", "")
+        quiz_category = body.get("quiz_category")
+
+        if quiz_category["type"] == "click":
+            quiz_questions = Question.query.all()
+        else:
+            quiz_category["id"] = str(int(quiz_category["id"]) + 1)
+            quiz_questions = Question.query.filter_by(
+                category=quiz_category["id"]
+            ).all()
+
+        if len(previous_questions) == len(quiz_questions):
+            return jsonify({"question": False})
+        else:
+            next_question = random.choice(quiz_questions)
+            if previous_questions != []:
+                while next_question.id in previous_questions:
+                    next_question = random.choice(quiz_questions)
+
+            return jsonify({"question": next_question.format()})
 
     """
     @TODO: 
