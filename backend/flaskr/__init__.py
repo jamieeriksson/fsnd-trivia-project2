@@ -75,7 +75,6 @@ def create_app(test_config=None):
         all_categories = [
             category.type for category in Category.query.order_by(Category.id).all()
         ]
-        current_category = Category.query.first()
         all_questions = Question.query.all()
 
         page = request.args.get("page", 1, type=int)
@@ -88,7 +87,6 @@ def create_app(test_config=None):
                 "questions": formatted_questions,
                 "totalQuestions": len(all_questions),
                 "categories": all_categories,
-                "currentCategory": current_category.type,
             }
         )
 
@@ -259,7 +257,7 @@ def create_app(test_config=None):
                 while next_question.id in previous_questions:
                     next_question = random.choice(quiz_questions)
 
-            return jsonify({"question": next_question.format()})
+            return jsonify({"success": True, "question": next_question.format()})
 
     """
     @TODO: 
