@@ -24,6 +24,7 @@ def create_app(test_config=None):
     @TODO: Use the after_request decorator to set Access-Control-Allow
     """
 
+    # Set up CORS headers with after_request decorator
     @app.after_request
     def after_request(response):
         response.headers.add(
@@ -78,13 +79,14 @@ def create_app(test_config=None):
         all_questions = Question.query.all()
 
         page = request.args.get("page", 1, type=int)
-        current_questions = Question.query.paginate(page, 10, True).items
-        formatted_questions = [question.format() for question in current_questions]
+        paginated_questions = Question.query.paginate(page, 10, True).items
+
+        current_questions = [question.format() for question in paginated_questions]
 
         return jsonify(
             {
                 "success": True,
-                "questions": formatted_questions,
+                "questions": current_questions,
                 "totalQuestions": len(all_questions),
                 "categories": all_categories,
             }
@@ -125,13 +127,12 @@ def create_app(test_config=None):
     @app.route("/questions", methods=["POST"])
     def create_questions():
         body = request.get_json()
-        print(body)
         new_question = body.get("question", None)
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
-
         category_id = body.get("category", None)
-        new_category = Category.query.filter_by(id=int(category_id)).first()
+        # Category ID sent by the front end needs to be incremented by one in order to get correct category
+        new_category = Category.query.filter_by(id=(int(category_id) + 1)).first()
 
         try:
             question = Question(
@@ -143,6 +144,7 @@ def create_app(test_config=None):
             question.insert()
 
             all_questions = Question.query.all()
+
             return jsonify(
                 {
                     "success": True,
@@ -166,15 +168,14 @@ def create_app(test_config=None):
 
     @app.route("/questions/search", methods=["POST"])
     def search_questions():
+        body = request.get_json()
+        search_term = body.get("searchTerm", None)
         try:
-            body = request.get_json()
-            search_term = body.get("searchTerm", None)
-            page = request.args.get("page", 1, type=int)
-
             all_questions = Question.query.filter(
                 Question.question.ilike(f"%{search_term}%")
             ).all()
 
+            page = request.args.get("page", 1, type=int)
             current_questions = (
                 Question.query.filter(Question.question.ilike(f"%{search_term}%"))
                 .paginate(page, 10, True)
@@ -202,22 +203,26 @@ def create_app(test_config=None):
 
     @app.route("/categories/<int:category_id>/questions")
     def questions_by_category(category_id):
+        # Category ID sent by the front end needs to be incremented by one in order to get correct category
         category_id += 1
         current_category = Category.query.filter_by(id=category_id).one_or_none()
         if current_category is None:
             abort(404)
+
         page = request.args.get("page", 1, type=int)
-        current_questions = (
+        paginated_questions = (
             Question.query.filter_by(category=str(category_id))
             .paginate(page, 10, True)
             .items
         )
+
         all_questions = Question.query.filter_by(category=str(category_id)).all()
-        formatted_questions = [question.format() for question in current_questions]
+        current_questions = [question.format() for question in paginated_questions]
+
         return jsonify(
             {
                 "success": True,
-                "questions": formatted_questions,
+                "questions": current_questions,
                 "totalQuestions": len(all_questions),
                 "currentCategory": current_category.format(),
             }
@@ -241,14 +246,18 @@ def create_app(test_config=None):
         previous_questions = body.get("previous_questions", "")
         quiz_category = body.get("quiz_category")
 
+        # All categories is represented by {"type": "click"} from frontend.
+        # If categories is All, then get all questions, else get questions by category.
         if quiz_category["type"] == "click":
             quiz_questions = Question.query.all()
         else:
+            # Category ID sent by the front end needs to be incremented by one in order to get correct category
             quiz_category["id"] = str(int(quiz_category["id"]) + 1)
             quiz_questions = Question.query.filter_by(
                 category=quiz_category["id"]
             ).all()
 
+        # If all questions have been asked, return false. Else return a random, unasked question from category.
         if len(previous_questions) == len(quiz_questions):
             return jsonify({"question": False})
         else:
