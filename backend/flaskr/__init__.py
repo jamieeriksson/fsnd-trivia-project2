@@ -44,19 +44,22 @@ def create_app(test_config=None):
 
     @app.route("/categories")
     def categories():
-        try:
-            categories = Category.query.order_by(Category.id).all()
-            categories = [category.type for category in categories]
+        if request.method == "GET":
+            try:
+                categories = Category.query.order_by(Category.id).all()
+                categories = [category.type for category in categories]
 
-            return jsonify(
-                {
-                    "success": True,
-                    "categories": categories,
-                    "total_categories": len(categories),
-                }
-            )
-        except:
-            abort(400)
+                return jsonify(
+                    {
+                        "success": True,
+                        "categories": categories,
+                        "total_categories": len(categories),
+                    }
+                )
+            except:
+                abort(400)
+        else:
+            abort(405)
 
     """
     @TODO: 
@@ -73,24 +76,27 @@ def create_app(test_config=None):
 
     @app.route("/questions")
     def questions():
-        all_categories = [
-            category.type for category in Category.query.order_by(Category.id).all()
-        ]
-        all_questions = Question.query.all()
+        if request.method == "GET":
+            all_categories = [
+                category.type for category in Category.query.order_by(Category.id).all()
+            ]
+            all_questions = Question.query.all()
 
-        page = request.args.get("page", 1, type=int)
-        paginated_questions = Question.query.paginate(page, 10, True).items
+            page = request.args.get("page", 1, type=int)
+            paginated_questions = Question.query.paginate(page, 10, True).items
 
-        current_questions = [question.format() for question in paginated_questions]
+            current_questions = [question.format() for question in paginated_questions]
 
-        return jsonify(
-            {
-                "success": True,
-                "questions": current_questions,
-                "totalQuestions": len(all_questions),
-                "categories": all_categories,
-            }
-        )
+            return jsonify(
+                {
+                    "success": True,
+                    "questions": current_questions,
+                    "totalQuestions": len(all_questions),
+                    "categories": all_categories,
+                }
+            )
+        else:
+            abort(405)
 
     """
     @TODO: 
@@ -131,6 +137,9 @@ def create_app(test_config=None):
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
         category_id = body.get("category", None)
+
+        if None in [new_question, new_answer, category_id]:
+            abort(400)
 
         try:
             question = Question(
@@ -240,31 +249,34 @@ def create_app(test_config=None):
 
     @app.route("/quizzes", methods=["POST"])
     def quiz():
-        body = request.get_json()
-        previous_questions = body.get("previous_questions", "")
-        quiz_category = body.get("quiz_category")
+        if request.method == "POST":
+            body = request.get_json()
+            previous_questions = body.get("previous_questions", "")
+            quiz_category = body.get("quiz_category")
 
-        # All categories is represented by {"type": "click"} from frontend.
-        # If categories is All, then get all questions, else get questions by category.
-        if quiz_category["type"] == "click":
-            quiz_questions = Question.query.all()
+            # All categories is represented by {"type": "click"} from frontend.
+            # If categories is All, then get all questions, else get questions by category.
+            if quiz_category["type"] == "click":
+                quiz_questions = Question.query.all()
+            else:
+                # Category ID sent by the front end needs to be incremented by one in order to get correct category
+                quiz_category["id"] = str(int(quiz_category["id"]) + 1)
+                quiz_questions = Question.query.filter_by(
+                    category=quiz_category["id"]
+                ).all()
+
+            # If all questions have been asked, return false. Else return a random, unasked question from category.
+            if len(previous_questions) == len(quiz_questions):
+                return jsonify({"question": False})
+            else:
+                next_question = random.choice(quiz_questions)
+                if previous_questions != []:
+                    while next_question.id in previous_questions:
+                        next_question = random.choice(quiz_questions)
+
+                return jsonify({"success": True, "question": next_question.format()})
         else:
-            # Category ID sent by the front end needs to be incremented by one in order to get correct category
-            quiz_category["id"] = str(int(quiz_category["id"]) + 1)
-            quiz_questions = Question.query.filter_by(
-                category=quiz_category["id"]
-            ).all()
-
-        # If all questions have been asked, return false. Else return a random, unasked question from category.
-        if len(previous_questions) == len(quiz_questions):
-            return jsonify({"question": False})
-        else:
-            next_question = random.choice(quiz_questions)
-            if previous_questions != []:
-                while next_question.id in previous_questions:
-                    next_question = random.choice(quiz_questions)
-
-            return jsonify({"success": True, "question": next_question.format()})
+            abort(405)
 
     """
     @TODO: 
@@ -284,6 +296,13 @@ def create_app(test_config=None):
         return (
             jsonify({"success": False, "error": 404, "message": "resource not found"}),
             404,
+        )
+
+    @app.errorhandler(405)
+    def not_found(error):
+        return (
+            jsonify({"success": False, "error": 405, "message": "method not allowed"}),
+            405,
         )
 
     @app.errorhandler(422)

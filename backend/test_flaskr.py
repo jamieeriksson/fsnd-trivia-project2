@@ -52,6 +52,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["categories"])
         self.assertTrue(len(data["categories"]))
 
+    def test_405_get_categories_wrong_method(self):
+        response = self.client().post("/categories")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "method not allowed")
+
     def test_get_questions(self):
         response = self.client().get("/questions")
         data = json.loads(response.data)
@@ -61,6 +69,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["totalQuestions"])
         self.assertTrue(len(data["categories"]))
         self.assertTrue(len(data["questions"]))
+
+    def test_405_get_questions_wrong_method(self):
+        response = self.client().patch("/questions")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "method not allowed")
 
     def test_get_questions_per_category(self):
         response = self.client().get("/categories/4/questions")
@@ -94,6 +110,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], True)
         self.assertTrue(data["question"])
 
+    def test_405_quizzes_wrong_method(self):
+        response = self.client().get("/quizzes")
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "method not allowed")
+
     def test_create_new_question(self):
         response = self.client().post("/questions", json=self.new_question)
         data = json.loads(response.data)
@@ -102,6 +126,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], True)
         self.assertTrue(data["created"])
         self.assertTrue(data["total_questions"])
+
+    def test_400_empty_create_new_question(self):
+        response = self.client().post("/questions", json={"difficulty": 5})
+        data = json.loads(response.data)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "bad request")
 
     def test_delete_question_by_id(self):
         response = self.client().delete("/questions/14")
