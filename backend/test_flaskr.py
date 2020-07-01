@@ -15,8 +15,6 @@ class TriviaTestCase(unittest.TestCase):
         self.app = create_app()
         self.client = self.app.test_client
         self.database_path = os.getenv("DATABASE_TEST_URI")
-        # self.database_name = "trivia_test"
-        # self.database_path = "postgres://{}/{}".format('localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
         self.new_question = {
@@ -152,7 +150,9 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "resource not found")
 
     def test_search_questions(self):
-        response = self.client().post("/questions/search", json={"searchTerm": "count"})
+        response = self.client().post(
+            "/questions/search", json={"searchTerm": "count"}
+        )
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 200)
