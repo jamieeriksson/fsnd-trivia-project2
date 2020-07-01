@@ -131,15 +131,13 @@ def create_app(test_config=None):
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
         category_id = body.get("category", None)
-        # Category ID sent by the front end needs to be incremented by one in order to get correct category
-        new_category = Category.query.filter_by(id=(int(category_id) + 1)).first()
 
         try:
             question = Question(
                 question=new_question,
                 answer=new_answer,
                 difficulty=int(new_difficulty),
-                category=str(new_category.id),
+                category=category_id,
             )
             question.insert()
 
