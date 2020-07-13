@@ -139,7 +139,7 @@ def create_app(test_config=None):
         new_question = body.get("question", None)
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
-        category_id = body.get("category", None)
+        category_id = str(int(body.get("category", None)) + 1)
 
         if None in [new_question, new_answer, category_id]:
             abort(400)
@@ -265,8 +265,10 @@ def create_app(test_config=None):
     def quiz():
         if request.method == "POST":
             body = request.get_json()
+            print(body)
             previous_questions = body.get("previous_questions", "")
             quiz_category = body.get("quiz_category")
+            print(quiz_category)
 
             # All categories is represented by {"type": "click"} from
             # frontend.
@@ -275,10 +277,13 @@ def create_app(test_config=None):
             else:
                 # Category ID sent by the front end needs to be incremented
                 # by one in order to get correct category.
+                print(quiz_category["id"])
                 quiz_category["id"] = str(int(quiz_category["id"]) + 1)
                 quiz_questions = Question.query.filter_by(
                     category=quiz_category["id"]
                 ).all()
+                if quiz_questions is None:
+                    abort(404)
 
             # Returns false to end quiz if all questions have been asked.
             if len(previous_questions) == len(quiz_questions):
@@ -289,6 +294,7 @@ def create_app(test_config=None):
                     while next_question.id in previous_questions:
                         next_question = random.choice(quiz_questions)
 
+                print(next_question.format())
                 return jsonify(
                     {"success": True, "question": next_question.format()}
                 )
