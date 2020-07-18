@@ -84,6 +84,7 @@ def create_app(test_config=None):
             all_questions = Question.query.all()
 
             page = request.args.get("page", 1, type=int)
+            print(page)
             paginated_questions = Question.query.paginate(page, 10, True).items
 
             current_questions = [
@@ -94,7 +95,7 @@ def create_app(test_config=None):
                 {
                     "success": True,
                     "questions": current_questions,
-                    "totalQuestions": len(all_questions),
+                    "total_questions": len(all_questions),
                     "categories": all_categories,
                 }
             )

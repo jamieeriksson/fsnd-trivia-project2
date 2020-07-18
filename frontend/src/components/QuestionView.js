@@ -10,7 +10,7 @@ class QuestionView extends Component {
     super();
     this.state = {
       questions: [],
-      page: 1,
+      page: new URLSearchParams(window.location.search).get("page"),
       totalQuestions: 0,
       categories: {},
       currentCategory: null,
@@ -32,6 +32,7 @@ class QuestionView extends Component {
           categories: result.categories,
           currentCategory: result.current_category,
         });
+        console.log(this.state);
         return;
       },
       error: (error) => {
