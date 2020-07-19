@@ -10,7 +10,7 @@ class FormView extends Component {
       question: "",
       answer: "",
       difficulty: 1,
-      category: 1,
+      category: "1",
       categories: {},
     };
   }
@@ -28,6 +28,7 @@ class FormView extends Component {
         return;
       },
     });
+    console.log(this.state.categories);
   }
 
   submitQuestion = (event) => {

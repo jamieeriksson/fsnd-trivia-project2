@@ -35,11 +35,6 @@ class TriviaTestCase(unittest.TestCase):
         """Executed after reach test"""
         pass
 
-    """
-    TODO
-    Write at least one test for each test for successful operation and for expected errors.
-    """
-
     def test_get_all_categories(self):
         """Test GET route for retrieving all of the trivia categories"""
         response = self.client().get("/categories")
@@ -64,7 +59,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data["success"], True)
-        self.assertTrue(data["totalQuestions"])
+        self.assertTrue(data["total_questions"])
         self.assertTrue(len(data["categories"]))
         self.assertTrue(len(data["questions"]))
 
