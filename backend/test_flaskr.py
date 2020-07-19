@@ -94,7 +94,7 @@ class TriviaTestCase(unittest.TestCase):
             "/quizzes",
             json={
                 "previous_questions": ["12", "23"],
-                "quiz_category": {"type": "History", "id": "3"},
+                "quiz_category": {"type": "History", "id": "4"},
             },
         )
         data = json.loads(response.data)

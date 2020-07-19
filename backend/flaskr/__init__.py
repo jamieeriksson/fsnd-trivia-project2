@@ -50,7 +50,7 @@ def create_app(test_config=None):
                 for category in categories:
                     info = {str(category.id): category.type}
                     categories_formatted.update(info)
-                print(categories_formatted)
+
                 return jsonify(
                     {
                         "success": True,
@@ -86,13 +86,12 @@ def create_app(test_config=None):
             all_questions = Question.query.all()
 
             page = request.args.get("page", 1, type=int)
-            print(page)
+
             paginated_questions = Question.query.paginate(page, 10, True).items
 
             current_questions = [
                 question.format() for question in paginated_questions
             ]
-            print(current_questions)
 
             return jsonify(
                 {
@@ -140,7 +139,7 @@ def create_app(test_config=None):
     @app.route("/questions", methods=["POST"])
     def create_questions():
         body = request.get_json()
-        print(body)
+
         new_question = body.get("question", None)
         new_answer = body.get("answer", None)
         new_difficulty = body.get("difficulty", None)
@@ -267,17 +266,16 @@ def create_app(test_config=None):
     def quiz():
         if request.method == "POST":
             body = request.get_json()
-            print(body)
+
             previous_questions = body.get("previous_questions", "")
             quiz_category = body.get("quiz_category")
-            print(quiz_category)
 
             # All categories is represented by {"type": "click"} from
             # frontend.
             if quiz_category["type"] == "click":
                 quiz_questions = Question.query.all()
             else:
-                print(quiz_category["id"])
+
                 quiz_category["id"] = str(int(quiz_category["id"]))
                 quiz_questions = Question.query.filter_by(
                     category=quiz_category["id"]
@@ -294,7 +292,6 @@ def create_app(test_config=None):
                     while next_question.id in previous_questions:
                         next_question = random.choice(quiz_questions)
 
-                print(next_question.format())
                 return jsonify(
                     {"success": True, "question": next_question.format()}
                 )
